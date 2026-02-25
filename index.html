@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔塔AI图像生成工具 - Qwen-Image</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 魔塔AI图像生成工具</h1>
+            <p class="subtitle">基于 Qwen-Image 模型的文生图工具</p>
+        </header>
+
+        <!-- API配置区域 -->
+        <div class="config-section">
+            <div class="form-group">
+                <label for="apiKey">API密钥</label>
+                <input type="password" id="apiKey" placeholder="请输入魔塔API密钥">
+                <button class="toggle-visibility" onclick="toggleApiKeyVisibility()">
+                    <span id="eyeIcon">👁️</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 生成参数区域 -->
+        <div class="generate-section">
+            <div class="form-group">
+                <label for="prompt">提示词</label>
+                <textarea 
+                    id="prompt" 
+                    rows="4" 
+                    placeholder="描述你想要生成的图像，例如：一只可爱的猫咪在花园里玩耍..."
+                ></textarea>
+            </div>
+
+            <div class="params-row">
+                <div class="form-group">
+                    <label for="width">图像宽度</label>
+                    <select id="width">
+                        <option value="512">512</option>
+                        <option value="768">768</option>
+                        <option value="1024" selected>1024</option>
+                        <option value="1280">1280</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="height">图像高度</label>
+                    <select id="height">
+                        <option value="512">512</option>
+                        <option value="768">768</option>
+                        <option value="1024" selected>1024</option>
+                        <option value="1280">1280</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="steps">生成步数</label>
+                    <input type="number" id="steps" value="20" min="10" max="50">
+                </div>
+
+                <div class="form-group">
+                    <label for="guidanceScale">引导系数</label>
+                    <input type="number" id="guidanceScale" value="7.5" min="1" max="20" step="0.5">
+                </div>
+            </div>
+
+            <button class="generate-btn" onclick="generateImage()">
+                <span class="btn-text">生成图像</span>
+                <span class="btn-loader" style="display: none;">
+                    <span class="spinner"></span>
+                </span>
+            </button>
+        </div>
+
+        <!-- 结果展示区域 -->
+        <div class="result-section">
+            <div class="result-header">
+                <h2>生成结果</h2>
+                <div class="result-actions" style="display: none;">
+                    <button class="action-btn download-btn" onclick="downloadImage()">
+                        ⬇️ 下载
+                    </button>
+                    <button class="action-btn save-btn" onclick="saveToHistory()">
+                        💾 保存
+                    </button>
+                </div>
+            </div>
+
+            <div class="image-container" id="imageContainer">
+                <div class="placeholder">
+                    <span class="placeholder-icon">🖼️</span>
+                    <p>生成的图像将显示在这里</p>
+                </div>
+            </div>
+
+            <!-- 错误提示 -->
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+        </div>
+
+        <!-- 历史记录区域 -->
+        <div class="history-section">
+            <div class="history-header">
+                <h2>历史记录</h2>
+                <button class="clear-btn" onclick="clearHistory()" style="display: none;">
+                    🗑️ 清空
+                </button>
+            </div>
+            <div class="history-grid" id="historyGrid"></div>
+            <div class="empty-history" id="emptyHistory">
+                <p>暂无历史记录</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
