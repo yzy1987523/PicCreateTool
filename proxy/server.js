@@ -36,12 +36,13 @@ app.post('/api/images/generations', async (req, res) => {
             });
         }
 
-        // 转发请求到魔塔API
+        // 转发请求到魔塔API（使用异步模式）
         const response = await fetch(`${MODELSCOPE_API}/images/generations`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': apiKey
+                'Authorization': apiKey,
+                'X-ModelScope-Async-Mode': 'true'
             },
             body: JSON.stringify(req.body)
         });
@@ -60,8 +61,35 @@ app.post('/api/images/generations', async (req, res) => {
         }
 
         const result = JSON.parse(responseText);
-        console.log('图像生成成功');
-        
+        console.log('异步任务已创建:', result.task_id);
+
+        // 如果任务成功，等待并获取结果
+        if (result.task_status === 'SUCCEED' && result.task_id) {
+            // 等待2秒后查询任务结果
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            const taskResult = await fetch(`${MODELSCOPE_API}/tasks/${result.task_id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': apiKey
+                }
+            });
+
+            if (taskResult.ok) {
+                const taskData = await taskResult.json();
+                console.log('任务结果获取成功');
+
+                // 返回符合前端期望的格式
+                if (taskData.output && taskData.output.image_url) {
+                    return res.json({
+                        images: [{
+                            url: taskData.output.image_url
+                        }]
+                    });
+                }
+            }
+        }
+
         res.json(result);
     } catch (error) {
         console.error('代理服务器错误:', error);
