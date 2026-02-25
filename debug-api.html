@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API诊断工具 - 魔塔AI</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ec9b0;
+            margin-bottom: 20px;
+        }
+        .section {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: #4ec9b0;
+            margin-top: 0;
+        }
+        .console {
+            background: #000;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .console::-webkit-scrollbar {
+            width: 10px;
+        }
+        .console::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        .console::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 5px;
+        }
+        .log-line {
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-info { color: #569cd6; }
+        .log-success { color: #4ec9b0; }
+        .log-error { color: #f48771; }
+        .log-warning { color: #dcdcaa; }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #dcdcaa;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            background: #1e1e1e;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+        }
+        .test-button {
+            padding: 12px 24px;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background: #1177bb;
+        }
+        .test-button:disabled {
+            background: #404040;
+            cursor: not-allowed;
+        }
+        .info-box {
+            background: #1e3a5f;
+            border-left: 4px solid #4ec9b0;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 魔塔API诊断工具</h1>
+
+        <div class="info-box">
+            <strong>💡 诊断目标：</strong><br>
+            检测API端点可访问性、CORS配置、以及可能的错误原因
+        </div>
+
+        <div class="section">
+            <h2>⚙️ 配置</h2>
+            <div class="input-group">
+                <label>API密钥：</label>
+                <input type="text" id="apiKey" value="ms-28230386-a9ef-41bd-8982-a2d474026996">
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 测试</h2>
+            <button class="test-button" onclick="testDirectAPI()">测试直接API调用</button>
+            <button class="test-button" onclick="testCORSPreflight()">测试CORS预检请求</button>
+            <button class="test-button" onclick="testAlternativeEndpoint()">测试备用端点</button>
+        </div>
+
+        <div class="section">
+            <h2>📋 诊断日志</h2>
+            <div class="console" id="console"></div>
+        </div>
+    </div>
+
+    <script>
+        const consoleEl = document.getElementById('console');
+        const apiKeyInput = document.getElementById('apiKey');
+
+        function log(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            line.textContent = `[${timestamp}] ${message}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleEl.innerHTML = '';
+        }
+
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKeyInput.value}`
+            };
+        }
+
+        // 测试1：直接API调用
+        async function testDirectAPI() {
+            clearConsole();
+            log('═══════════════════════════════════════════════════════', 'info');
+            log('测试1：直接API调用', 'info');
+            log('═══════════════════════════════════════════════════════', 'info');
+
+            const endpoint = 'https://api-inference.modelscope.cn/v1/images/generations';
+            log(`端点: ${endpoint}`, 'info');
+
+            const payload = {
+                model: 'Qwen/Qwen-Image',
+                prompt: '一只可爱的猫',
+                width: 512,
+                height: 512,
+                steps: 10,
+                guidance_scale: 7.5
+            };
+
+            log('请求体:', 'info');
+            log(JSON.stringify(payload, null, 2), 'info');
+
+            try {
+                log('发送请求...', 'info');
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(payload)
+                });
+
+                log(`响应状态: ${response.status} ${response.statusText}`, 'info');
+
+                const responseText = await response.text();
+                log('响应内容:', 'info');
+                log(responseText, 'info');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = JSON.parse(responseText);
+                log('✅ API调用成功!', 'success');
+
+                if (result.images && result.images.length > 0) {
+                    log(`图像URL: ${result.images[0].url}`, 'success');
+                }
+            } catch (error) {
+                log(`❌ 错误: ${error.message}`, 'error');
+
+                if (error.message.includes('Failed to fetch')) {
+                    log('这是一个CORS错误!', 'error');
+                    log('浏览器阻止了跨域请求', 'error');
+                    log('解决方案:', 'warning');
+                    log('1. 使用后端代理服务器', 'warning');
+                    log('2. 使用Node.js等服务器端代码', 'warning');
+                    log('3. 使用魔塔SDK', 'warning');
+                }
+            }
+        }
+
+        // 测试2：CORS预检请求
+        async function testCORSPreflight() {
+            clearConsole();
+            log('═══════════════════════════════════════════════════════', 'info');
+            log('测试2：CORS预检请求 (OPTIONS)', 'info');
+            log('═══════════════════════════════════════════════════════', 'info');
+
+            const endpoint = 'https://api-inference.modelscope.cn/v1/images/generations';
+            log(`端点: ${endpoint}`, 'info');
+
+            try {
+                log('发送OPTIONS请求...', 'info');
+                const response = await fetch(endpoint, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type,Authorization',
+                        'Origin': window.location.origin
+                    }
+                });
+
+                log(`响应状态: ${response.status} ${response.statusText}`, 'info');
+
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                };
+
+                log('CORS响应头:', 'info');
+                for (const [key, value] of Object.entries(corsHeaders)) {
+                    log(`${key}: ${value || '未设置'}`, 'info');
+                }
+
+                if (!corsHeaders['Access-Control-Allow-Origin']) {
+                    log('⚠️ CORS未正确配置!', 'warning');
+                    log('服务器没有返回必要的CORS头', 'warning');
+                } else {
+                    log('✅ CORS头已设置', 'success');
+                }
+            } catch (error) {
+                log(`❌ 错误: ${error.message}`, 'error');
+                log('预检请求失败，可能存在CORS问题', 'error');
+            }
+        }
+
+        // 测试3：备用端点
+        async function testAlternativeEndpoint() {
+            clearConsole();
+            log('═══════════════════════════════════════════════════════', 'info');
+            log('测试3：尝试备用端点', 'info');
+            log('═══════════════════════════════════════════════════════', 'info');
+
+            const endpoints = [
+                'https://api-inference.modelscope.cn/v1/images/generations',
+                'https://dashscope.aliyuncs.com/compatible-mode/v1/images/generations',
+            ];
+
+            for (const endpoint of endpoints) {
+                log(`尝试端点: ${endpoint}`, 'info');
+
+                try {
+                    const payload = {
+                        model: 'Qwen/Qwen-Image',
+                        prompt: '一只猫',
+                        width: 512,
+                        height: 512
+                    };
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify(payload)
+                    });
+
+                    log(`状态: ${response.status}`, 'info');
+
+                    if (response.ok) {
+                        log('✅ 此端点可用!', 'success');
+                        const result = await response.json();
+                        if (result.images && result.images.length > 0) {
+                            log(`图像URL: ${result.images[0].url}`, 'success');
+                        }
+                        return;
+                    }
+                } catch (error) {
+                    log(`失败: ${error.message}`, 'error');
+                }
+
+                log('---', 'info');
+            }
+
+            log('所有端点都失败了', 'warning');
+        }
+    </script>
+</body>
+</html>
