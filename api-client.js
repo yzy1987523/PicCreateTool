@@ -52,23 +52,32 @@ class ModelScopeAPI {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                let errorMessage;
+
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+                } catch {
+                    errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`;
+                }
+
+                throw new Error(errorMessage);
             }
 
             return await response.json();
         } catch (error) {
             clearTimeout(timeoutId);
-            
+
             if (error.name === 'AbortError') {
                 throw new Error('请求超时，请检查网络连接');
             }
-            
-            // 处理CORS错误
+
+            // 检查是否是代理服务器未启动的错误
             if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                throw new Error('网络错误：可能是CORS限制，建议使用代理服务器');
+                throw new Error('无法连接到服务器。请确保：\n1. 代理服务器已启动（cd proxy && npm start）\n2. 服务器运行在 http://localhost:3001');
             }
-            
+
             throw error;
         }
     }
